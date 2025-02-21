@@ -1,0 +1,4 @@
+in cmd move to the folder where app.py is present 
+and there run the following command
+
+streamlit run app.py
