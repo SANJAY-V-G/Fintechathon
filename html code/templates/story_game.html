@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Crime Stories{% endblock %}
+
+{% block additional_head %}
+<style>
+    .story-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .scenario-card {
+        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .scenario-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .scenario-image {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .scenario-header {
+        background: linear-gradient(90deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .choice-btn {
+        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .choice-btn:hover {
+        transform: translateX(5px);
+        background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .choice-btn.correct {
+        background: linear-gradient(145deg, #28a745 0%, #218838 100%);
+        color: white;
+    }
+    
+    .choice-btn.incorrect {
+        background: linear-gradient(145deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .feedback-card {
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+        animation: slideIn 0.5s ease;
+    }
+    
+    .score-display {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(145deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
+    
+    .progress-container {
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 3px;
+        margin: 1rem 0;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card .value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .stat-card.highlight {
+        background: linear-gradient(145deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+    }
+    
+    .stat-card.highlight .value {
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="story-container">
+    <div id="story-container">
+        <div class="scenario-card fade-in">
+            <div class="scenario-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 id="case-number" class="mb-0"></h3>
+                    <span id="difficulty" class="badge bg-info"></span>
+                </div>
+            </div>
+            <img id="scenario-image" class="scenario-image" src="" alt="Scenario Image">
+            <div class="card-body">
+                <p id="scenario-text" class="lead mb-4"></p>
+                <div id="choices-container" class="d-grid gap-3">
+                    <!-- Choices will be dynamically inserted here -->
+                </div>
+                <div id="feedback" class="mt-4" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="score-display">
+    <div id="score-display">Score: 0</div>
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scenarios = [
+    {
+        case: "FIN-001",
+        difficulty: "Easy",
+        text: "You receive an urgent email from your bank stating that your account has been compromised. The email asks you to click a link and verify your account details immediately.",
+        image: "/static/images/scenarios/phishing.jpg",
+        choices: [
+            {
+                text: "Click the link and enter your details immediately",
+                impact: -20,
+                feedback: "This was a phishing scam! Never click on suspicious links or provide personal information through email."
+            },
+            {
+                text: "Contact your bank directly through their official phone number",
+                impact: 30,
+                feedback: "Excellent choice! Always verify communications through official channels."
+            },
+            {
+                text: "Forward the email to your bank's fraud department",
+                impact: 20,
+                feedback: "Good thinking! Reporting suspicious activities helps protect others."
+            }
+        ]
+    },
+    {
+        case: "FIN-002",
+        difficulty: "Medium",
+        text: "A friend introduces you to an investment opportunity promising 50% returns within a month. They claim many people have already made huge profits.",
+        image: "/static/images/scenarios/investment_scam.jpg",
+        choices: [
+            {
+                text: "Invest immediately to not miss out",
+                impact: -30,
+                feedback: "This was likely a Ponzi scheme! If returns sound too good to be true, they probably are."
+            },
+            {
+                text: "Research the investment and company background",
+                impact: 25,
+                feedback: "Smart move! Due diligence is crucial in avoiding investment scams."
+            },
+            {
+                text: "Report the scheme to financial authorities",
+                impact: 35,
+                feedback: "Excellent! Reporting suspicious schemes helps protect others from fraud."
+            }
+        ]
+    },
+    {
+        case: "FIN-003",
+        difficulty: "Hard",
+        text: "You notice an unauthorized transaction on your credit card statement from an unfamiliar online store.",
+        image: "/static/images/scenarios/credit_card_fraud.jpg",
+        choices: [
+            {
+                text: "Wait to see if more transactions appear",
+                impact: -25,
+                feedback: "Delayed action in identity theft cases can lead to bigger losses."
+            },
+            {
+                text: "Contact your credit card company and file a dispute",
+                impact: 30,
+                feedback: "Perfect! Quick action is crucial in cases of identity theft."
+            },
+            {
+                text: "Cancel your card and request a new one",
+                impact: 25,
+                feedback: "Good choice! Protecting yourself from further fraud is important."
+            }
+        ]
+    }
+];
+
+let currentScenarioIndex = 0;
+let score = 0;
+
+function loadScenario() {
+    if (currentScenarioIndex >= scenarios.length) {
+        updateFinalStoryScore();
+        return;
+    }
+
+    const scenario = scenarios[currentScenarioIndex];
+    
+    // Update scenario content
+    document.getElementById('case-number').textContent = `Case #${scenario.case}`;
+    document.getElementById('difficulty').textContent = `Difficulty: ${scenario.difficulty}`;
+    document.getElementById('scenario-text').textContent = scenario.text;
+    document.getElementById('scenario-image').src = scenario.image;
+    
+    // Clear and rebuild choices
+    const choicesContainer = document.getElementById('choices-container');
+    choicesContainer.innerHTML = '';
+    
+    scenario.choices.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.className = 'choice-btn w-100 text-start';
+        button.innerHTML = `
+            <div class="d-flex align-items-center">
+                <span class="me-3">${index + 1}</span>
+                <span>${choice.text}</span>
+            </div>
+        `;
+        button.onclick = () => makeChoice(index);
+        choicesContainer.appendChild(button);
+    });
+    
+    // Reset feedback
+    document.getElementById('feedback').style.display = 'none';
+    
+    // Update progress
+    updateProgress();
+}
+
+function makeChoice(choiceIndex) {
+    const currentScenario = scenarios[currentScenarioIndex];
+    const choice = currentScenario.choices[choiceIndex];
+    const buttons = document.querySelectorAll('.choice-btn');
+    
+    // Disable all buttons
+    buttons.forEach(btn => btn.disabled = true);
+    
+    // Update score
+    const points = choice.impact;
+    score += points;
+    
+    // Show feedback with animation
+    const feedback = document.getElementById('feedback');
+    feedback.innerHTML = `
+        <div class="feedback-card ${points > 0 ? 'alert-success' : 'alert-danger'}">
+            <h5 class="mb-2">${choice.feedback}</h5>
+            <p class="mb-0">Impact: ${points > 0 ? '+' : ''}${points} points</p>
+        </div>
+    `;
+    feedback.style.display = 'block';
+    
+    // Highlight chosen answer
+    buttons[choiceIndex].classList.add(points > 0 ? 'correct' : 'incorrect');
+    
+    // Update score display
+    document.getElementById('score-display').textContent = `Score: ${score}`;
+    
+    // Move to next scenario after delay
+    setTimeout(() => {
+        currentScenarioIndex++;
+        if (currentScenarioIndex < scenarios.length) {
+            loadScenario();
+        } else {
+            updateFinalStoryScore();
+        }
+    }, 3000);
+}
+
+function updateFinalStoryScore() {
+    fetch('/update_story_score', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            score: score,
+            scenarioId: currentScenarioIndex
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            endStory();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function endStory() {
+    const container = document.getElementById('story-container');
+    const maxPossibleScore = scenarios.reduce((total, scenario) => {
+        return total + Math.max(...scenario.choices.map(c => c.impact));
+    }, 0);
+    
+    const percentage = (score / maxPossibleScore) * 100;
+    
+    container.innerHTML = `
+        <div class="text-center fade-in">
+            <h2 class="mb-4">Investigation Complete!</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h4>Your Score</h4>
+                        <p class="value">${score}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h4>Max Possible</h4>
+                        <p class="value">${maxPossibleScore}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card highlight">
+                        <h4>Performance</h4>
+                        <p class="value">${percentage.toFixed(1)}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5">
+                <button onclick="location.reload()" class="btn btn-primary btn-lg me-3">Try Another Story</button>
+                <a href="/dashboard" class="btn btn-outline-primary btn-lg">Back to Dashboard</a>
+            </div>
+        </div>
+    `;
+}
+
+function updateProgress() {
+    const progress = (currentScenarioIndex / scenarios.length) * 100;
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+}
+
+// Start the story when the page loads
+document.addEventListener('DOMContentLoaded', loadScenario);
+</script>
+{% endblock %}

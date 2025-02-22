@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Story{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="text-center mb-4">Financial Learning Stories</h2>
+            <div class="row">
+                {% for scenario in scenarios %}
+                <div class="col-md-4 mb-4">
+                    <div class="card story-card h-100">
+                        <div class="card-img-container">
+                            <div class="story-image" style="background: linear-gradient(45deg, #4CAF50, #2196F3);">
+                                <i class="fas {% if loop.index == 1 %}fa-wallet{% elif loop.index == 2 %}fa-piggy-bank{% else %}fa-chart-line{% endif %} fa-3x text-white"></i>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ scenario.title }}</h5>
+                            <p class="card-text">{{ scenario.description }}</p>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ scenario.progress }}%"
+                                     aria-valuenow="{{ scenario.progress }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ scenario.progress }}%
+                                </div>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="startScenario({{ loop.index0 }})">
+                                {% if scenario.progress == 0 %}Start{% elif scenario.progress == 100 %}Review{% else %}Continue{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scenario Modal -->
+<div class="modal fade" id="scenarioModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scenarioTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="scenario-content"></div>
+                <div class="choices mt-4" id="scenario-choices"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scenarios = [
+    {
+        title: "Budgeting Basics",
+        content: "You've just received your first paycheck! Now you need to plan how to use it wisely.",
+        choices: [
+            {
+                text: "Create a detailed budget allocating money for necessities, savings, and entertainment",
+                feedback: "Excellent choice! Creating a balanced budget is the foundation of financial success.",
+                correct: true
+            },
+            {
+                text: "Spend it all on entertainment",
+                feedback: "That might be fun now, but it's not a sustainable financial strategy.",
+                correct: false
+            }
+        ]
+    },
+    {
+        title: "Smart Saving",
+        content: "You want to save money for a future goal. What's the best approach?",
+        choices: [
+            {
+                text: "Set up automatic transfers to a savings account each payday",
+                feedback: "Perfect! Automating your savings makes it easier to stick to your goals.",
+                correct: true
+            },
+            {
+                text: "Save whatever is left at the end of the month",
+                feedback: "This approach is less effective as you might end up with nothing to save.",
+                correct: false
+            }
+        ]
+    },
+    {
+        title: "Investment Introduction",
+        content: "You have some savings and want to make your money work for you. What should you do?",
+        choices: [
+            {
+                text: "Research different investment options and start with a diversified portfolio",
+                feedback: "Great thinking! Diversification helps manage risk while pursuing growth.",
+                correct: true
+            },
+            {
+                text: "Put all your money in a single hot stock",
+                feedback: "This is very risky. It's better to diversify your investments.",
+                correct: false
+            }
+        ]
+    }
+];
+
+let currentProgress = 0;
+
+function startScenario(index) {
+    const scenario = scenarios[index];
+    const modal = new bootstrap.Modal(document.getElementById('scenarioModal'));
+    
+    document.getElementById('scenarioTitle').textContent = scenario.title;
+    document.getElementById('scenario-content').innerHTML = `
+        <p class="lead">${scenario.content}</p>
+    `;
+    
+    const choicesHtml = scenario.choices.map((choice, i) => `
+        <button class="btn btn-outline-primary w-100 mb-3" onclick="makeChoice(${index}, ${i})">
+            ${choice.text}
+        </button>
+    `).join('');
+    
+    document.getElementById('scenario-choices').innerHTML = choicesHtml;
+    modal.show();
+}
+
+function makeChoice(scenarioIndex, choiceIndex) {
+    const scenario = scenarios[scenarioIndex];
+    const choice = scenario.choices[choiceIndex];
+    const choicesDiv = document.getElementById('scenario-choices');
+    
+    // Show feedback
+    choicesDiv.innerHTML = `
+        <div class="alert ${choice.correct ? 'alert-success' : 'alert-danger'}">
+            ${choice.feedback}
+        </div>
+        <button class="btn btn-primary" onclick="completeScenario(${scenarioIndex})">Continue</button>
+    `;
+}
+
+function completeScenario(index) {
+    // Calculate new progress
+    currentProgress = Math.min(100, ((index + 1) / scenarios.length) * 100);
+    
+    // Update progress in database
+    fetch('{{ url_for("update_story_progress") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ progress: currentProgress })
+    }).then(() => {
+        window.location.href = '{{ url_for("dashboard") }}';
+    });
+}
+</script>
+
+<style>
+.story-card {
+    transition: transform 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.story-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-img-container {
+    height: 200px;
+    overflow: hidden;
+}
+
+.story-image {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 5px;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 20px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.btn-outline-primary:hover {
+    transform: translateX(10px);
+    transition: transform 0.3s ease;
+}
+</style>
+{% endblock %}

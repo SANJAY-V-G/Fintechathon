@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Financial Learning Games{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card profile-card fade-in">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            <div class="profile-image rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; font-size: 48px; margin: 0 auto;">
+                                {{ current_user.username[0].upper() }}
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h2 class="mb-3">Welcome, {{ current_user.username }}! 👋</h2>
+                            <p class="lead">Continue your financial learning journey</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-trophy mb-2" style="font-size: 24px; color: #ffd700;"></i>
+                <h4>Current Score</h4>
+                <p class="value">{{ current_user.quiz_score }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-medal mb-2" style="font-size: 24px; color: #f1c40f;"></i>
+                <h4>High Score</h4>
+                <p class="value">{{ current_user.quiz_high_score }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-book-reader mb-2" style="font-size: 24px; color: #2ecc71;"></i>
+                <h4>Story Progress</h4>
+                <p class="value">{{ current_user.story_progress }}%</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-gamepad mb-2" style="font-size: 24px; color: #3498db;"></i>
+                <h4>Games Played</h4>
+                <p class="value">{{ current_user.total_games_played }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Games Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card game-card fade-in">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Financial Quiz</h3>
+                        <span class="badge bg-primary">Quiz</span>
+                    </div>
+                    <p class="card-text">Test your financial knowledge with our interactive quiz!</p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ (current_user.quiz_score / 100 * 100)|round|int }}%"
+                             aria-valuenow="{{ (current_user.quiz_score / 100 * 100)|round|int }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ (current_user.quiz_score / 100 * 100)|round|int }}%
+                        </div>
+                    </div>
+                    <a href="{{ url_for('quiz_game') }}" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Start Quiz
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card game-card fade-in">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Financial Story</h3>
+                        <span class="badge bg-success">Story</span>
+                    </div>
+                    <p class="card-text">Learn through interactive stories and real-life scenarios!</p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ current_user.story_progress }}%"
+                             aria-valuenow="{{ current_user.story_progress }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ current_user.story_progress }}%
+                        </div>
+                    </div>
+                    <a href="{{ url_for('story_game') }}" class="btn btn-success">
+                        <i class="fas fa-book-reader me-2"></i>Continue Story
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+<style>
+.profile-card {
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.game-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+}
+
+.value {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}

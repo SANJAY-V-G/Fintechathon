@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Quiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Financial Quiz</h2>
+                    <div id="quiz-container">
+                        <div class="progress mb-4">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" id="progress-bar">
+                                Question <span id="current-question">1</span> of <span id="total-questions">{{ questions|length }}</span>
+                            </div>
+                        </div>
+                        
+                        {% for question in questions %}
+                        <div class="question-container" id="question-{{ loop.index0 }}" {% if not loop.first %}style="display: none;"{% endif %}>
+                            <h4 class="mb-3">{{ question.question }}</h4>
+                            <div class="options">
+                                {% for option in question.options %}
+                                <div class="option mb-3">
+                                    <button class="btn btn-outline-primary w-100 text-start option-btn" 
+                                            data-correct="{{ loop.index0 == question.correct }}"
+                                            onclick="checkAnswer(this)">
+                                        {{ option }}
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div id="result-container" style="display: none;" class="text-center">
+                            <h3 class="mb-4">Quiz Complete!</h3>
+                            <p class="h4 mb-3">Your Score: <span id="final-score">0</span></p>
+                            <button class="btn btn-primary" onclick="window.location.href='{{ url_for('dashboard') }}'">
+                                Return to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentQuestion = 0;
+let score = 0;
+const totalQuestions = {{ questions|length }};
+
+function updateProgress() {
+    const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+    document.getElementById('progress-bar').style.width = progress + '%';
+    document.getElementById('current-question').textContent = currentQuestion + 1;
+}
+
+function checkAnswer(button) {
+    const isCorrect = button.dataset.correct === 'true';
+    const options = button.parentElement.parentElement.getElementsByClassName('option-btn');
+    
+    // Disable all options
+    Array.from(options).forEach(opt => opt.disabled = true);
+    
+    if (isCorrect) {
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        score += 10;
+    } else {
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-danger');
+        // Show correct answer
+        Array.from(options).forEach(opt => {
+            if (opt.dataset.correct === 'true') {
+                opt.classList.remove('btn-outline-primary');
+                opt.classList.add('btn-success');
+            }
+        });
+    }
+    
+    // Wait 1 second before moving to next question
+    setTimeout(() => {
+        if (currentQuestion < totalQuestions - 1) {
+            document.getElementById(`question-${currentQuestion}`).style.display = 'none';
+            currentQuestion++;
+            document.getElementById(`question-${currentQuestion}`).style.display = 'block';
+            updateProgress();
+        } else {
+            showResults();
+        }
+    }, 1000);
+}
+
+function showResults() {
+    document.getElementById(`question-${currentQuestion}`).style.display = 'none';
+    document.getElementById('result-container').style.display = 'block';
+    document.getElementById('final-score').textContent = score;
+    
+    // Update score in database
+    fetch('{{ url_for("update_quiz_score") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ score: score })
+    });
+}
+
+updateProgress();
+</script>
+
+<style>
+.option-btn {
+    padding: 15px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.option-btn:hover {
+    transform: translateX(10px);
+}
+
+.progress {
+    height: 25px;
+}
+
+.progress-bar {
+    font-size: 14px;
+    line-height: 25px;
+}
+</style>
+{% endblock %}
